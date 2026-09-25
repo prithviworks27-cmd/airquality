@@ -48,7 +48,7 @@ function renderDetails(city, result) {
 
     el.cityName.textContent = city.name;
     el.cityMeta.textContent = [city.admin1, city.country].filter(Boolean).join(", ");
-    el.updatedAt.textContent = result.fetchedAt.toLocaleTimeString();
+    el.updatedAt.textContent = result.fetchedAt.toLocaleTimeString("en-GB");
 
     const cat = getAqiCategory(result.aqi);
     const aqi = result.aqi !== null ? result.aqi : "--";

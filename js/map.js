@@ -2,7 +2,7 @@
 // map.js — Leaflet map + color-coded city markers
 // ============================================================
 
-import { DEFAULT_CITIES } from "./config.js";
+import { DEFAULT_CITIES, TILE_LAYERS } from "./config.js";
 import { getAqiCategory } from "./aqi.js";
 
 let map = null;
@@ -23,10 +23,23 @@ export function initMap(selectCallback) {
         worldCopyJump: true
     });
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    // Basemap with English place-name labels; falls back to OSM default
+    // tiles (local-language labels) if the primary tile source errors out.
+    let primaryFailed = false;
+    const primary = L.tileLayer(TILE_LAYERS.primary.url, {
         maxZoom: 18,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
+        attribution: TILE_LAYERS.primary.attribution
+    });
+    primary.on("tileerror", () => {
+        if (primaryFailed) return;
+        primaryFailed = true;
+        map.removeLayer(primary);
+        L.tileLayer(TILE_LAYERS.fallback.url, {
+            maxZoom: 18,
+            attribution: TILE_LAYERS.fallback.attribution
+        }).addTo(map);
+    });
+    primary.addTo(map);
 }
 
 /**

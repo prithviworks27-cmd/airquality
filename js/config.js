@@ -14,6 +14,22 @@ export const DEFAULT_CITIES = [
     { name: "Sydney",    country: "Australia",    lat: -33.8688, lon: 151.2093 }
 ];
 
+// Map tile layers.
+// Primary layer renders all place names in English; the fallback uses OSM's
+// default tiles (local-language labels) in case the primary source is down.
+export const TILE_LAYERS = {
+    primary: {
+        url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+        attribution: 'Tiles &copy; Esri — Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom',
+        maxZoom: 18
+    },
+    fallback: {
+        url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 18
+    }
+};
+
 // AQI categories (US-EPA style).
 // range: [min, max) of AQI values in this category.
 export const AQI_CATEGORIES = [
