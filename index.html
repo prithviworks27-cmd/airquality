@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Real-time air quality monitoring dashboard with interactive map, pollutant breakdown and health alerts.">
+    <title>AirWatch — Air Quality Monitoring Dashboard</title>
+
+    <!-- Leaflet (map library) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin="">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header class="topbar">
+        <div class="topbar-inner">
+            <div class="brand">
+                <span class="brand-dot" aria-hidden="true"></span>
+                <h1>AirWatch</h1>
+                <span class="brand-sub">Air Quality Dashboard</span>
+            </div>
+
+            <form id="searchForm" class="search-form" role="search">
+                <input type="search" id="searchInput" class="search-input"
+                       placeholder="Search a city (e.g. Tokyo)…" autocomplete="off" aria-label="Search city">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </form>
+        </div>
+    </header>
+
+    <main class="layout">
+        <!-- Map -->
+        <section class="map-section" aria-label="Air quality map">
+            <div id="map" class="map"></div>
+            <div class="map-legend" aria-label="AQI legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#00c853"></span>Good</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ffd600"></span>Moderate</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ff8f00"></span>Unhealthy (sensitive)</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#e53935"></span>Unhealthy</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#8e24aa"></span>Very Unhealthy</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#7e0023"></span>Hazardous</span>
+            </div>
+        </section>
+
+        <!-- Details panel -->
+        <aside class="details-panel" aria-label="Selected city details">
+            <div id="loadingState" class="state-box">
+                <p>Loading air quality data…</p>
+            </div>
+
+            <div id="errorState" class="state-box state-error hidden">
+                <p id="errorText">Could not load data.</p>
+            </div>
+
+            <div id="cityDetails" class="hidden">
+                <div class="city-header">
+                    <h2 id="cityName">—</h2>
+                    <p id="cityMeta" class="city-meta">—</p>
+                    <p class="updated-at">Updated <span id="updatedAt">—</span></p>
+                </div>
+
+                <div class="aqi-hero">
+                    <div class="aqi-ring" id="aqiRing">
+                        <span class="aqi-value" id="aqiValue">—</span>
+                        <span class="aqi-label">AQI</span>
+                    </div>
+                    <div class="aqi-summary">
+                        <span id="aqiCategory" class="category-badge">—</span>
+                        <p id="dominantPollutant" class="dominant">—</p>
+                    </div>
+                </div>
+
+                <div id="alertBanner" class="alert-banner hidden" role="alert">
+                    <strong>Health alert</strong>
+                    <p id="alertText"></p>
+                </div>
+
+                <h3 class="section-title">Pollutant breakdown</h3>
+                <div id="pollutantList" class="pollutant-list"></div>
+
+                <button id="refreshBtn" class="btn btn-outline btn-block">↻ Refresh</button>
+            </div>
+        </aside>
+    </main>
+
+    <footer class="footer">
+        <p>Data: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo Air Quality API</a> ·
+           Map: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> ·
+           Built with Leaflet</p>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Real-time air quality monitoring dashboard with interactive map, pollutant breakdown and health alerts.">
+    <title>AirWatch — Air Quality Monitoring Dashboard</title>
+
+    <!-- Leaflet (map library) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin="">
+    <style>
+/* ============================================================
+   AirWatch — Air Quality Monitoring Dashboard
+   Zero-dependency custom CSS (no build step required)
+   ============================================================ */
+
+:root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --panel-soft: #24334a;
+    --border: #334155;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --accent: #38bdf8;
+    --good: #00c853;
+    --moderate: #ffd600;
+    --usg: #ff8f00;
+    --unhealthy: #e53935;
+    --very-unhealthy: #8e24aa;
+    --hazardous: #7e0023;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+    height: 100%;
+}
+
+body {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+}
+
+/* ---------- Top bar ---------- */
+
+.topbar {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+}
+
+.topbar-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0.75rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.brand {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+}
+
+.brand-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--good);
+    align-self: center;
+    animation: pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+}
+
+.brand h1 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.brand-sub {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
+
+.search-form {
+    display: flex;
+    gap: 0.5rem;
+    flex: 1;
+    max-width: 420px;
+}
+
+.search-input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.55rem 0.9rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--panel-soft);
+    color: var(--text);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.search-input:focus {
+    border-color: var(--accent);
+}
+
+.search-input::placeholder { color: var(--text-muted); }
+
+/* ---------- Buttons ---------- */
+
+.btn {
+    padding: 0.55rem 1.1rem;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter 0.15s, background 0.15s;
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: #0c1526;
+}
+
+.btn-primary:hover { filter: brightness(1.1); }
+
+.btn-outline {
+    background: transparent;
+    color: var(--text);
+    border-color: var(--border);
+}
+
+.btn-outline:hover {
+    background: var(--panel-soft);
+    border-color: var(--text-muted);
+}
+
+.btn-block { width: 100%; margin-top: 1rem; }
+
+/* ---------- Layout ---------- */
+
+.layout {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    min-height: 0;
+}
+
+@media (max-width: 960px) {
+    .layout {
+        grid-template-columns: 1fr;
+    }
+    .map-section {
+        height: 45dvh;
+    }
+}
+
+.map-section {
+    position: relative;
+    min-height: 320px;
+}
+
+.map {
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+}
+
+.map-legend {
+    position: absolute;
+    bottom: 18px;
+    left: 12px;
+    z-index: 1000;
+    background: rgba(15, 23, 42, 0.92);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 0.8rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.9rem;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    max-width: min(90%, 480px);
+}
+
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+}
+
+.legend-swatch {
+    width: 10px; height: 10px;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+/* ---------- Details panel ---------- */
+
+.details-panel {
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+@media (max-width: 960px) {
+    .details-panel { border-left: none; border-top: 1px solid var(--border); }
+}
+
+.state-box {
+    padding: 2.5rem 1rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+.state-error { color: #f87171; }
+
+.hidden { display: none !important; }
+
+.city-header h2 {
+    font-size: 1.6rem;
+    margin-bottom: 0.2rem;
+}
+
+.city-meta {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.updated-at {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    margin-top: 0.35rem;
+}
+
+/* ---------- AQI hero ---------- */
+
+.aqi-hero {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin: 1.25rem 0;
+    padding: 1.1rem;
+    background: var(--panel-soft);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.aqi-ring {
+    --ring: var(--good);
+    flex-shrink: 0;
+    width: 104px; height: 104px;
+    border-radius: 50%;
+    border: 6px solid var(--ring);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.15);
+}
+
+.aqi-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.aqi-label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    margin-top: 0.2rem;
+}
+
+.aqi-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.category-badge {
+    align-self: flex-start;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #0c1526;
+    background: var(--good);
+}
+
+.dominant {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* ---------- Alert banner ---------- */
+
+.alert-banner {
+    background: rgba(229, 57, 53, 0.12);
+    border: 1px solid rgba(229, 57, 53, 0.45);
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.alert-banner strong {
+    display: block;
+    color: #f87171;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.3rem;
+}
+
+.alert-banner p {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--text);
+}
+
+/* ---------- Pollutant list ---------- */
+
+.section-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    margin: 1rem 0 0.75rem;
+}
+
+.pollutant-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+}
+
+.pollutant-row {
+    display: grid;
+    grid-template-columns: 52px 1fr 90px;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.85rem;
+}
+
+.pollutant-name {
+    font-weight: 600;
+    color: var(--text);
+}
+
+.pollutant-bar-track {
+    height: 8px;
+    background: var(--panel-soft);
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.pollutant-bar {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.4s ease;
+}
+
+.pollutant-value {
+    text-align: right;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Footer ---------- */
+
+.footer {
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    padding: 0.8rem 1.25rem;
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.footer a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.footer a:hover { text-decoration: underline; }
+
+/* ---------- Leaflet popup theming ---------- */
+
+.leaflet-popup-content-wrapper {
+    background: var(--panel);
+    color: var(--text);
+    border-radius: 10px;
+}
+
+.leaflet-popup-tip { background: var(--panel); }
+
+.popup-city {
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+}
+
+.popup-aqi {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+</style>
+</head>
+<body>
+
+    <header class="topbar">
+        <div class="topbar-inner">
+            <div class="brand">
+                <span class="brand-dot" aria-hidden="true"></span>
+                <h1>AirWatch</h1>
+                <span class="brand-sub">Air Quality Dashboard</span>
+            </div>
+
+            <form id="searchForm" class="search-form" role="search">
+                <input type="search" id="searchInput" class="search-input"
+                       placeholder="Search a city (e.g. Tokyo)…" autocomplete="off" aria-label="Search city">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </form>
+        </div>
+    </header>
+
+    <main class="layout">
+        <!-- Map -->
+        <section class="map-section" aria-label="Air quality map">
+            <div id="map" class="map"></div>
+            <div class="map-legend" aria-label="AQI legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#00c853"></span>Good</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ffd600"></span>Moderate</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ff8f00"></span>Unhealthy (sensitive)</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#e53935"></span>Unhealthy</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#8e24aa"></span>Very Unhealthy</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#7e0023"></span>Hazardous</span>
+            </div>
+        </section>
+
+        <!-- Details panel -->
+        <aside class="details-panel" aria-label="Selected city details">
+            <div id="loadingState" class="state-box">
+                <p>Loading air quality data…</p>
+            </div>
+
+            <div id="errorState" class="state-box state-error hidden">
+                <p id="errorText">Could not load data.</p>
+            </div>
+
+            <div id="cityDetails" class="hidden">
+                <div class="city-header">
+                    <h2 id="cityName">—</h2>
+                    <p id="cityMeta" class="city-meta">—</p>
+                    <p class="updated-at">Updated <span id="updatedAt">—</span></p>
+                </div>
+
+                <div class="aqi-hero">
+                    <div class="aqi-ring" id="aqiRing">
+                        <span class="aqi-value" id="aqiValue">—</span>
+                        <span class="aqi-label">AQI</span>
+                    </div>
+                    <div class="aqi-summary">
+                        <span id="aqiCategory" class="category-badge">—</span>
+                        <p id="dominantPollutant" class="dominant">—</p>
+                    </div>
+                </div>
+
+                <div id="alertBanner" class="alert-banner hidden" role="alert">
+                    <strong>Health alert</strong>
+                    <p id="alertText"></p>
+                </div>
+
+                <h3 class="section-title">Pollutant breakdown</h3>
+                <div id="pollutantList" class="pollutant-list"></div>
+
+                <button id="refreshBtn" class="btn btn-outline btn-block">↻ Refresh</button>
+            </div>
+        </aside>
+    </main>
+
+    <footer class="footer">
+        <p>Data: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo Air Quality API</a> ·
+           Map: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> ·
+           Built with Leaflet</p>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    <script>
+// ==== js/config.js ====
+// ============================================================
+// config.js — default cities, AQI categories, API endpoints
+// ============================================================
+
+// Cities shown on the map at startup.
+const DEFAULT_CITIES = [
+    { name: "Delhi",     country: "India",        lat: 28.6139,  lon: 77.2090 },
+    { name: "Beijing",   country: "China",        lat: 39.9042,  lon: 116.4074 },
+    { name: "London",    country: "United Kingdom", lat: 51.5074, lon: -0.1278 },
+    { name: "New York",  country: "United States", lat: 40.7128, lon: -74.0060 },
+    { name: "Tokyo",     country: "Japan",        lat: 35.6762,  lon: 139.6503 },
+    { name: "São Paulo", country: "Brazil",       lat: -23.5505, lon: -46.6333 },
+    { name: "Lahore",    country: "Pakistan",     lat: 31.5204,  lon: 74.3587 },
+    { name: "Sydney",    country: "Australia",    lat: -33.8688, lon: 151.2093 }
+];
+
+// AQI categories (US-EPA style).
+// range: [min, max) of AQI values in this category.
+const AQI_CATEGORIES = [
+    {
+        key: "good",
+        label: "Good",
+        range: [0, 51],
+        color: "#00c853",
+        advice: "Air quality is satisfactory and poses little or no risk."
+    },
+    {
+        key: "moderate",
+        label: "Moderate",
+        range: [51, 101],
+        color: "#ffd600",
+        advice: "Acceptable air quality. Unusually sensitive people should consider limiting prolonged outdoor exertion."
+    },
+    {
+        key: "usg",
+        label: "Unhealthy for Sensitive Groups",
+        range: [101, 151],
+        color: "#ff8f00",
+        advice: "Sensitive groups (children, elderly, people with heart or lung disease) may experience health effects. General public is less likely to be affected."
+    },
+    {
+        key: "unhealthy",
+        label: "Unhealthy",
+        range: [151, 201],
+        color: "#e53935",
+        advice: "Everyone may begin to experience health effects. Avoid prolonged outdoor exertion; keep windows closed if possible."
+    },
+    {
+        key: "very-unhealthy",
+        label: "Very Unhealthy",
+        range: [201, 301],
+        color: "#8e24aa",
+        advice: "Health alert: the risk of health effects is increased for everyone. Avoid outdoor activity."
+    },
+    {
+        key: "hazardous",
+        label: "Hazardous",
+        range: [301, Infinity],
+        color: "#7e0023",
+        advice: "Emergency conditions: everyone is more likely to be affected. Stay indoors and filter air if possible."
+    }
+];
+
+// Pollutants we display, with their display names and max µg/m³
+// used for scaling the breakdown bars.
+const POLLUTANTS = [
+    { key: "pm2_5", label: "PM2.5", barMax: 250 },
+    { key: "pm10",  label: "PM10",  barMax: 400 },
+    { key: "o3",    label: "O₃",    barMax: 240 },
+    { key: "no2",   label: "NO₂",   barMax: 400 },
+    { key: "so2",   label: "SO₂",   barMax: 500 },
+    { key: "co",    label: "CO",    barMax: 10000 }
+];
+
+// API endpoints (Open-Meteo — free, no API key required).
+const AIR_QUALITY_API = "https://air-quality-api.open-meteo.com/v1/air-quality";
+const GEOCODING_API = "https://geocoding-api.open-meteo.com/v1/search";
+
+// Geographic bounds used when fetching city data.
+const FETCH_PARAMS = {
+    // NOTE: Open-Meteo now requires full variable names (ozone, nitrogen_dioxide,
+    // sulphur_dioxide, carbon_monoxide) rather than the short o3/no2/so2/co aliases.
+    current: "pm2_5,pm10,ozone,nitrogen_dioxide,sulphur_dioxide,carbon_monoxide,us_aqi",
+    timezone: "auto"
+};
+
+// Map Open-Meteo's response keys to the internal short keys used by aqi.js.
+const POLLUTANT_KEY_MAP = {
+    pm2_5: "pm2_5",
+    pm10: "pm10",
+    ozone: "o3",
+    nitrogen_dioxide: "no2",
+    sulphur_dioxide: "so2",
+    carbon_monoxide: "co"
+};
+
+
+// ==== js/aqi.js ====
+// ============================================================
+// aqi.js — AQI computation and category helpers
+// ============================================================
+
+
+/**
+ * Return the category object for a given AQI value.
+ * @param {number} aqi
+ */
+function getAqiCategory(aqi) {
+    if (typeof aqi !== "number" || Number.isNaN(aqi)) return null;
+    return AQI_CATEGORIES.find(c => aqi >= c.range[0] && aqi < c.range[1]) || null;
+}
+
+/**
+ * Compute an overall AQI from individual pollutant concentrations
+ * using US-EPA breakpoints. Returns { aqi, dominant } where dominant
+ * is the pollutant key that produced the highest sub-index.
+ *
+ * Pollutant keys here match Open-Meteo's current values.
+ */
+const EPA_BREAKPOINTS = {
+    pm2_5: [
+        [0.0, 12.0, 0, 50],
+        [12.1, 35.4, 51, 100],
+        [35.5, 55.4, 101, 150],
+        [55.5, 150.4, 151, 200],
+        [150.5, 250.4, 201, 300],
+        [250.5, 500.4, 301, 500]
+    ],
+    pm10: [
+        [0, 54, 0, 50],
+        [55, 154, 51, 100],
+        [155, 254, 101, 150],
+        [255, 354, 151, 200],
+        [355, 424, 201, 300],
+        [425, 604, 301, 500]
+    ],
+    o3: [
+        [0, 108, 0, 50],
+        [109, 214, 51, 100],
+        [215, 424, 101, 150],
+        [425, 504, 151, 200],
+        [505, 604, 201, 300],
+        [605, 804, 301, 500]
+    ],
+    no2: [
+        [0, 53, 0, 50],
+        [54, 100, 51, 100],
+        [101, 360, 101, 150],
+        [361, 649, 151, 200],
+        [650, 1249, 201, 300],
+        [1250, 2049, 301, 500]
+    ],
+    so2: [
+        [0, 35, 0, 50],
+        [36, 75, 51, 100],
+        [76, 185, 101, 150],
+        [186, 304, 151, 200],
+        [305, 604, 201, 300],
+        [605, 1004, 301, 500]
+    ],
+    co: [
+        [0, 4400, 0, 50],
+        [4450, 9400, 51, 100],
+        [9450, 12400, 101, 150],
+        [12450, 15400, 151, 200],
+        [15450, 30400, 201, 300],
+        [30500, 50400, 301, 500]
+    ]
+};
+
+/**
+ * Convert one pollutant concentration to a sub-AQI index.
+ * @param {string} pollutantKey
+ * @param {number} conc  concentration in µg/m³ (CO in µg/m³)
+ * @returns {number|null} sub-index or null if not computable
+ */
+function pollutantSubIndex(pollutantKey, conc) {
+    const table = EPA_BREAKPOINTS[pollutantKey];
+    if (!table || typeof conc !== "number" || Number.isNaN(conc) || conc < 0) return null;
+
+    for (const [cLow, cHigh, iLow, iHigh] of table) {
+        if (conc <= cHigh) {
+            // Piecewise-linear interpolation.
+            if (cHigh === cLow) return iHigh;
+            return Math.round(((iHigh - iLow) / (cHigh - cLow)) * (conc - cLow) + iLow);
+        }
+    }
+    // Above the highest breakpoint — clamp to the top of the scale.
+    return 500;
+}
+
+/**
+ * Compute overall AQI from a set of current pollutant values.
+ * @param {Object<string, number>} pollutants e.g. { pm2_5: 23.4, ... }
+ * @returns {{ aqi: number, dominant: string } | null}
+ */
+function computeAqi(pollutants) {
+    let best = null;
+    for (const [key, conc] of Object.entries(pollutants)) {
+        const sub = pollutantSubIndex(key, conc);
+        if (sub !== null && (best === null || sub > best.aqi)) {
+            best = { aqi: sub, dominant: key };
+        }
+    }
+    return best;
+}
+
+/**
+ * Human-readable label for a pollutant key.
+ */
+const POLLUTANT_LABELS = {
+    pm2_5: "PM2.5",
+    pm10: "PM10",
+    o3: "Ozone (O₃)",
+    no2: "Nitrogen Dioxide (NO₂)",
+    so2: "Sulphur Dioxide (SO₂)",
+    co: "Carbon Monoxide (CO)"
+};
+
+function pollutantLabel(key) {
+    return POLLUTANT_LABELS[key] || key;
+}
+
+
+// ==== js/airQuality.js ====
+// ============================================================
+// airQuality.js — Open-Meteo fetch layer
+// ============================================================
+
+
+
+/**
+ * Fetch current air quality for a coordinate.
+ * Returns a normalized object:
+ * {
+ *   aqi, dominant, pollutants: { pm2_5, pm10, o3, no2, so2, co },
+ *   usAqi (API-provided, may be null)
+ * }
+ * @param {number} lat
+ * @param {number} lon
+ */
+async function fetchAirQuality(lat, lon) {
+    const url = `${AIR_QUALITY_API}?latitude=${lat}&longitude=${lon}` +
+        `&current=${FETCH_PARAMS.current}&timezone=${FETCH_PARAMS.timezone}`;
+
+    const res = await fetch(url);
+    if (!res.ok) {
+        throw new Error(`Air quality API error (${res.status})`);
+    }
+    const data = await res.json();
+    const cur = data.current;
+    if (!cur) throw new Error("Malformed API response");
+
+    const pollutants = {};
+    for (const [apiKey, internalKey] of Object.entries(POLLUTANT_KEY_MAP)) {
+        const v = cur[apiKey];
+        if (typeof v === "number") pollutants[internalKey] = v;
+    }
+    if (Object.keys(pollutants).length === 0) {
+        throw new Error("No pollutant data available for this location");
+    }
+
+    const computed = computeAqi(pollutants);
+
+    return {
+        pollutants,
+        aqi: computed ? computed.aqi : (cur.us_aqi ?? null),
+        dominant: computed ? computed.dominant : null,
+        usAqi: cur.us_aqi ?? null,
+        fetchedAt: new Date()
+    };
+}
+
+/**
+ * Search a city by name using Open-Meteo's geocoding API.
+ * Returns an array of matches: { name, country, admin1, lat, lon }.
+ * @param {string} query
+ */
+async function searchCity(query) {
+    const url = `${GEOCODING_API}?name=${encodeURIComponent(query)}&count=5&language=en&format=json`;
+    const res = await fetch(url);
+    if (!res.ok) {
+        throw new Error(`Geocoding API error (${res.status})`);
+    }
+    const data = await res.json();
+    return (data.results || []).map(r => ({
+        name: r.name,
+        country: r.country || "",
+        admin1: r.admin1 || "",
+        lat: r.latitude,
+        lon: r.longitude
+    }));
+}
+
+
+// ==== js/map.js ====
+// ============================================================
+// map.js — Leaflet map + color-coded city markers
+// ============================================================
+
+
+
+let map = null;
+const markers = new Map(); // cityKey -> leaflet marker
+let onSelect = null;       // callback(city)
+
+/**
+ * Initialize the Leaflet map.
+ * @param {(city: Object) => void} selectCallback called when a marker is clicked
+ */
+function initMap(selectCallback) {
+    onSelect = selectCallback;
+
+    map = L.map("map", {
+        center: [22, 30],
+        zoom: 2.5,
+        minZoom: 2,
+        worldCopyJump: true
+    });
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 18,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+}
+
+/**
+ * Add (or replace) a marker for a city with a color-coded circle.
+ * @param {Object} city  { name, country, lat, lon }
+ * @param {Object|null} aqiData  { aqi } or null while loading
+ */
+function setCityMarker(city, aqiData) {
+    const key = `${city.name}|${city.lat.toFixed(3)},${city.lon.toFixed(3)}`;
+
+    const cat = aqiData ? getAqiCategory(aqiData.aqi) : null;
+    const color = cat ? cat.color : "#94a3b8";
+
+    const marker = L.circleMarker([city.lat, city.lon], {
+        radius: Math.max(9, Math.min(22, (aqiData ? aqiData.aqi : 25) / 12)),
+        color: "#0f172a",
+        weight: 2,
+        fillColor: color,
+        fillOpacity: 0.85
+    }).addTo(map);
+
+    marker.bindTooltip(
+        `<strong>${city.name}</strong><br>AQI: ${aqiData ? aqiData.aqi : "…"}`,
+        { direction: "top", offset: [0, -8] }
+    );
+
+    marker.on("click", () => onSelect && onSelect(city));
+
+    // Replace any previous marker for this city.
+    if (markers.has(key)) {
+        map.removeLayer(markers.get(key));
+    }
+    markers.set(key, marker);
+}
+
+/**
+ * Fly the map to a city and open its selection state.
+ * @param {Object} city
+ */
+function focusCity(city) {
+    map.flyTo([city.lat, city.lon], 7, { duration: 0.8 });
+}
+
+/**
+ * Fit the map to show all default cities at startup.
+ */
+function fitToCities() {
+    const bounds = L.latLngBounds(DEFAULT_CITIES.map(c => [c.lat, c.lon]));
+    map.fitBounds(bounds, { padding: [40, 40] });
+}
+
+
+// ==== js/app.js ====
+// ============================================================
+// app.js — orchestration: data loading, UI rendering, events
+// ============================================================
+
+
+
+
+
+// ---------- State ----------
+let selectedCity = null;
+let lastResult = null;
+let refreshTimer = null;
+
+// ---------- Element refs ----------
+const el = {
+    loading: document.getElementById("loadingState"),
+    errorState: document.getElementById("errorState"),
+    errorText: document.getElementById("errorText"),
+    cityDetails: document.getElementById("cityDetails"),
+    cityName: document.getElementById("cityName"),
+    cityMeta: document.getElementById("cityMeta"),
+    updatedAt: document.getElementById("updatedAt"),
+    aqiValue: document.getElementById("aqiValue"),
+    aqiRing: document.getElementById("aqiRing"),
+    aqiCategory: document.getElementById("aqiCategory"),
+    dominantPollutant: document.getElementById("dominantPollutant"),
+    alertBanner: document.getElementById("alertBanner"),
+    alertText: document.getElementById("alertText"),
+    pollutantList: document.getElementById("pollutantList"),
+    refreshBtn: document.getElementById("refreshBtn"),
+    searchForm: document.getElementById("searchForm"),
+    searchInput: document.getElementById("searchInput")
+};
+
+// ---------- Helpers ----------
+
+function show(element) { element.classList.remove("hidden"); }
+function hide(element) { element.classList.add("hidden"); }
+
+/**
+ * Render the details panel from a result object.
+ */
+function renderDetails(city, result) {
+    hide(el.loading);
+    hide(el.errorState);
+    show(el.cityDetails);
+
+    el.cityName.textContent = city.name;
+    el.cityMeta.textContent = [city.admin1, city.country].filter(Boolean).join(", ");
+    el.updatedAt.textContent = result.fetchedAt.toLocaleTimeString();
+
+    const cat = getAqiCategory(result.aqi);
+    const aqi = result.aqi !== null ? result.aqi : "--";
+
+    el.aqiValue.textContent = aqi;
+    el.aqiRing.style.setProperty("--ring", cat ? cat.color : "#94a3b8");
+    el.aqiCategory.textContent = cat ? cat.label : "Unknown";
+    el.aqiCategory.style.background = cat ? cat.color : "#94a3b8";
+    el.dominantPollutant.textContent =
+        result.dominant ? `Main pollutant: ${pollutantLabel(result.dominant)}` : "Main pollutant: —";
+
+    // Health alert banner for Unhealthy and above.
+    if (cat && result.aqi >= 151) {
+        el.alertText.textContent = cat.advice;
+        show(el.alertBanner);
+    } else {
+        hide(el.alertBanner);
+    }
+
+    // Pollutant breakdown bars.
+    el.pollutantList.innerHTML = "";
+    for (const p of POLLUTANTS) {
+        const value = result.pollutants[p.key];
+        if (typeof value !== "number") continue;
+        const pct = Math.min(100, Math.round((value / p.barMax) * 100));
+        const subCat = getAqiCategoryByConc(p.key, value);
+
+        const row = document.createElement("div");
+        row.className = "pollutant-row";
+        row.innerHTML = `
+            <span class="pollutant-name">${p.label}</span>
+            <span class="pollutant-bar-track">
+                <span class="pollutant-bar" style="width:${pct}%;background:${subCat ? subCat.color : "#64748b"}"></span>
+            </span>
+            <span class="pollutant-value">${value.toFixed(1)} µg/m³</span>
+        `;
+        el.pollutantList.appendChild(row);
+    }
+}
+
+/**
+ * Rough per-pollutant category from its concentration, for bar coloring.
+ * Uses the EPA sub-index, clamped to category colors.
+ */
+function getAqiCategoryByConc(pollutantKey, conc) {
+    const subIndex = pollutantSubIndex(pollutantKey, conc);
+    return subIndex === null ? null : getAqiCategory(subIndex);
+}
+
+// ---------- Data loading ----------
+
+async function selectCity(city) {
+    selectedCity = city;
+    focusCity(city);
+
+    show(el.loading);
+    hide(el.errorState);
+    hide(el.cityDetails);
+
+    try {
+        const result = await fetchAirQuality(city.lat, city.lon);
+        lastResult = { city, result };
+        renderDetails(city, result);
+    } catch (err) {
+        console.error("Failed to load air quality:", err);
+        el.errorText.textContent = `Could not load data for ${city.name}: ${err.message}`;
+        hide(el.loading);
+        hide(el.cityDetails);
+        show(el.errorState);
+    }
+}
+
+async function loadDefaultCities() {
+    // Fetch each city in parallel; each marker appears as its data arrives.
+    await Promise.all(DEFAULT_CITIES.map(async city => {
+        try {
+            const result = await fetchAirQuality(city.lat, city.lon);
+            setCityMarker(city, result);
+        } catch (err) {
+            console.warn(`Could not load AQI for ${city.name}:`, err);
+            setCityMarker(city, null); // gray marker
+        }
+    }));
+}
+
+// ---------- Events ----------
+
+el.refreshBtn.addEventListener("click", () => {
+    if (selectedCity) selectCity(selectedCity);
+});
+
+el.searchForm.addEventListener("submit", async e => {
+    e.preventDefault();
+    const query = el.searchInput.value.trim();
+    if (!query) return;
+
+    el.searchInput.disabled = true;
+    try {
+        const results = await searchCity(query);
+        if (results.length === 0) {
+            el.searchInput.setCustomValidity("");
+            alert(`No city found for "${query}"`);
+            return;
+        }
+        // Take the top match.
+        const top = results[0];
+        selectCity({ name: top.name, country: top.country, admin1: top.admin1, lat: top.lat, lon: top.lon });
+    } catch (err) {
+        console.error("Search failed:", err);
+        alert(`Search failed: ${err.message}`);
+    } finally {
+        el.searchInput.disabled = false;
+        el.searchInput.value = "";
+    }
+});
+
+// ---------- Init ----------
+
+initMap(city => selectCity(city));
+loadDefaultCities();
+
+// Auto-refresh every 10 minutes.
+refreshTimer = setInterval(() => {
+    if (selectedCity) selectCity(selectedCity);
+    loadDefaultCities();
+}, 10 * 60 * 1000);
+
+</script>
+</body>
+</html>
