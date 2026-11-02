@@ -1,22 +1,30 @@
 /* ============================================================
    AirWatch — Air Quality Monitoring Dashboard
+   Minimalism × Brutalism
+   - Monochrome ink-on-paper, mono/uppercase type
+   - Thick 2–3px borders, hard offset shadows, zero radius
+   - Semantic AQI colors are the only color
    Zero-dependency custom CSS (no build step required)
    ============================================================ */
 
 :root {
-    --bg: #0f172a;
-    --panel: #1e293b;
-    --panel-soft: #24334a;
-    --border: #334155;
-    --text: #e2e8f0;
-    --text-muted: #94a3b8;
-    --accent: #38bdf8;
+    --paper: #f4f2ed;
+    --card: #ffffff;
+    --ink: #111111;
+    --muted: #6f6c66;
+    --border-w: 2px;
+    --shadow: 4px 4px 0 var(--ink);
+    --shadow-sm: 3px 3px 0 var(--ink);
+
+    /* Semantic AQI colors (US-EPA) — keep in sync with configs/JS */
     --good: #00c853;
     --moderate: #ffd600;
     --usg: #ff8f00;
     --unhealthy: #e53935;
     --very-unhealthy: #8e24aa;
     --hazardous: #7e0023;
+
+    --mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -26,25 +34,30 @@ html, body {
 }
 
 body {
-    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-    background: var(--bg);
-    color: var(--text);
+    font-family: var(--mono);
+    background: var(--paper);
+    color: var(--ink);
     display: flex;
     flex-direction: column;
     min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
 }
+
+a { color: var(--ink); }
+
+::selection { background: var(--ink); color: var(--paper); }
 
 /* ---------- Top bar ---------- */
 
 .topbar {
-    background: var(--panel);
-    border-bottom: 1px solid var(--border);
+    background: var(--paper);
+    border-bottom: 3px solid var(--ink);
 }
 
 .topbar-inner {
     max-width: 1280px;
     margin: 0 auto;
-    padding: 0.75rem 1.25rem;
+    padding: 0.9rem 1.25rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -58,12 +71,13 @@ body {
     gap: 0.6rem;
 }
 
+/* "Live" indicator: a static-looking blinking block */
 .brand-dot {
     width: 10px; height: 10px;
-    border-radius: 50%;
-    background: var(--good);
+    border-radius: 0;
+    background: var(--ink);
     align-self: center;
-    animation: pulse 2.5s ease-in-out infinite;
+    animation: pulse 2.5s steps(2, jump-none) infinite;
 }
 
 @keyframes pulse {
@@ -72,75 +86,101 @@ body {
 }
 
 .brand h1 {
-    font-size: 1.25rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
 }
 
 .brand-sub {
-    font-size: 0.75rem;
-    color: var(--text-muted);
+    font-size: 0.7rem;
+    color: var(--muted);
     text-transform: uppercase;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.22em;
 }
 
 .search-form {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.6rem;
     flex: 1;
-    max-width: 420px;
+    max-width: 460px;
 }
 
 .search-input {
     flex: 1;
     min-width: 0;
-    padding: 0.55rem 0.9rem;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--panel-soft);
-    color: var(--text);
-    font-size: 0.9rem;
+    padding: 0.6rem 0.9rem;
+    border-radius: 0;
+    border: var(--border-w) solid var(--ink);
+    background: var(--card);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 0.85rem;
     outline: none;
-    transition: border-color 0.15s;
+    transition: box-shadow 0.1s, transform 0.1s;
+}
+
+.search-input::placeholder {
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.75rem;
 }
 
 .search-input:focus {
-    border-color: var(--accent);
+    box-shadow: var(--shadow-sm);
+    transform: translate(-1px, -1px);
 }
-
-.search-input::placeholder { color: var(--text-muted); }
 
 /* ---------- Buttons ---------- */
 
 .btn {
-    padding: 0.55rem 1.1rem;
-    border-radius: 8px;
-    border: 1px solid transparent;
-    font-size: 0.9rem;
-    font-weight: 600;
+    padding: 0.6rem 1.2rem;
+    border-radius: 0;
+    border: var(--border-w) solid var(--ink);
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
     cursor: pointer;
-    transition: filter 0.15s, background 0.15s;
+    transition: box-shadow 0.1s, transform 0.1s;
+}
+
+.btn:active {
+    transform: translate(3px, 3px);
+    box-shadow: none;
+}
+
+.btn:focus-visible,
+.search-input:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
 }
 
 .btn-primary {
-    background: var(--accent);
-    color: #0c1526;
+    background: var(--ink);
+    color: var(--paper);
+    box-shadow: var(--shadow-sm);
 }
 
-.btn-primary:hover { filter: brightness(1.1); }
+.btn-primary:hover {
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 var(--ink);
+}
 
 .btn-outline {
-    background: transparent;
-    color: var(--text);
-    border-color: var(--border);
+    background: var(--card);
+    color: var(--ink);
+    box-shadow: var(--shadow-sm);
 }
 
 .btn-outline:hover {
-    background: var(--panel-soft);
-    border-color: var(--text-muted);
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 var(--ink);
 }
 
-.btn-block { width: 100%; margin-top: 1rem; }
+.btn-block { width: 100%; margin-top: 1.25rem; }
 
 /* ---------- Layout ---------- */
 
@@ -157,34 +197,40 @@ body {
     }
     .map-section {
         height: 45dvh;
+        border-right: none;
+        border-bottom: 3px solid var(--ink);
     }
 }
 
 .map-section {
     position: relative;
     min-height: 320px;
+    border-right: 3px solid var(--ink);
 }
 
 .map {
     width: 100%;
     height: 100%;
-    background: var(--bg);
+    background: var(--paper);
 }
 
 .map-legend {
     position: absolute;
-    bottom: 18px;
-    left: 12px;
+    bottom: 20px;
+    left: 14px;
     z-index: 1000;
-    background: rgba(15, 23, 42, 0.92);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 0.5rem 0.8rem;
+    background: var(--card);
+    border: var(--border-w) solid var(--ink);
+    border-radius: 0;
+    box-shadow: var(--shadow-sm);
+    padding: 0.55rem 0.8rem;
     display: flex;
     flex-wrap: wrap;
     gap: 0.35rem 0.9rem;
-    font-size: 0.7rem;
-    color: var(--text-muted);
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink);
     max-width: min(90%, 480px);
 }
 
@@ -197,48 +243,59 @@ body {
 
 .legend-swatch {
     width: 10px; height: 10px;
-    border-radius: 3px;
+    border-radius: 0;
+    border: 1px solid var(--ink);
     display: inline-block;
+    flex-shrink: 0;
 }
 
 /* ---------- Details panel ---------- */
 
 .details-panel {
-    background: var(--panel);
-    border-left: 1px solid var(--border);
+    background: var(--card);
+    border-left: 2px solid var(--ink);
     padding: 1.5rem;
     overflow-y: auto;
 }
 
 @media (max-width: 960px) {
-    .details-panel { border-left: none; border-top: 1px solid var(--border); }
+    .details-panel { border-left: none; }
 }
 
 .state-box {
     padding: 2.5rem 1rem;
     text-align: center;
-    color: var(--text-muted);
-    font-size: 0.95rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
 }
 
-.state-error { color: #f87171; }
+.state-error { color: var(--unhealthy); }
 
 .hidden { display: none !important; }
 
 .city-header h2 {
-    font-size: 1.6rem;
-    margin-bottom: 0.2rem;
+    font-size: 1.9rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-bottom: 0.3rem;
+    word-break: break-word;
 }
 
 .city-meta {
-    color: var(--text-muted);
-    font-size: 0.85rem;
+    color: var(--muted);
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
 }
 
 .updated-at {
-    color: var(--text-muted);
-    font-size: 0.75rem;
-    margin-top: 0.35rem;
+    color: var(--muted);
+    font-size: 0.7rem;
+    margin-top: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
 }
 
 /* ---------- AQI hero ---------- */
@@ -246,172 +303,197 @@ body {
 .aqi-hero {
     display: flex;
     align-items: center;
-    gap: 1.25rem;
-    margin: 1.25rem 0;
-    padding: 1.1rem;
-    background: var(--panel-soft);
-    border: 1px solid var(--border);
-    border-radius: 12px;
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+    padding: 1.2rem;
+    background: var(--card);
+    border: var(--border-w) solid var(--ink);
+    border-radius: 0;
+    box-shadow: 6px 6px 0 var(--ink);
 }
 
+/* Square "ring": the JS sets --ring to the AQI category color */
 .aqi-ring {
     --ring: var(--good);
     flex-shrink: 0;
-    width: 104px; height: 104px;
-    border-radius: 50%;
-    border: 6px solid var(--ring);
+    width: 108px; height: 108px;
+    border-radius: 0;
+    border: 7px solid var(--ring);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--card);
 }
 
 .aqi-value {
-    font-size: 2rem;
-    font-weight: 700;
+    font-size: 2.1rem;
+    font-weight: 800;
     line-height: 1;
+    font-variant-numeric: tabular-nums;
 }
 
 .aqi-label {
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    letter-spacing: 0.15em;
-    margin-top: 0.2rem;
+    font-size: 0.58rem;
+    color: var(--muted);
+    letter-spacing: 0.16em;
+    margin-top: 0.3rem;
+    text-transform: uppercase;
+    white-space: nowrap;
 }
 
 .aqi-summary {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.6rem;
     min-width: 0;
 }
 
+/* Square badge; JS sets background (and, for contrast, text color) */
 .category-badge {
     align-self: flex-start;
-    padding: 0.3rem 0.75rem;
-    border-radius: 999px;
-    font-size: 0.75rem;
-    font-weight: 700;
+    padding: 0.35rem 0.75rem;
+    border-radius: 0;
+    border: var(--border-w) solid var(--ink);
+    font-size: 0.72rem;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #0c1526;
+    letter-spacing: 0.1em;
+    color: var(--ink);
     background: var(--good);
 }
 
 .dominant {
-    font-size: 0.85rem;
-    color: var(--text-muted);
+    font-size: 0.78rem;
+    color: var(--muted);
+    letter-spacing: 0.02em;
 }
 
 /* ---------- Alert banner ---------- */
 
 .alert-banner {
-    background: rgba(229, 57, 53, 0.12);
-    border: 1px solid rgba(229, 57, 53, 0.45);
-    border-radius: 10px;
-    padding: 0.9rem 1rem;
-    margin-bottom: 1.25rem;
+    background: var(--card);
+    border: 3px solid var(--unhealthy);
+    border-radius: 0;
+    box-shadow: var(--shadow);
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 1.5rem;
 }
 
 .alert-banner strong {
     display: block;
-    color: #f87171;
-    font-size: 0.8rem;
+    color: var(--unhealthy);
+    font-size: 0.72rem;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 0.3rem;
+    letter-spacing: 0.2em;
+    margin-bottom: 0.4rem;
 }
 
 .alert-banner p {
-    font-size: 0.85rem;
-    line-height: 1.5;
-    color: var(--text);
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: var(--ink);
 }
 
 /* ---------- Pollutant list ---------- */
 
 .section-title {
-    font-size: 0.75rem;
+    font-size: 0.68rem;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--text-muted);
-    margin: 1rem 0 0.75rem;
+    letter-spacing: 0.22em;
+    color: var(--muted);
+    margin: 1rem 0 1rem;
+    padding-bottom: 0.4rem;
+    border-bottom: var(--border-w) solid var(--ink);
 }
 
 .pollutant-list {
     display: flex;
     flex-direction: column;
-    gap: 0.7rem;
+    gap: 0.85rem;
 }
 
 .pollutant-row {
     display: grid;
-    grid-template-columns: 52px 1fr 90px;
+    grid-template-columns: 52px 1fr 110px;
     align-items: center;
     gap: 0.75rem;
-    font-size: 0.85rem;
+    font-size: 0.78rem;
 }
 
 .pollutant-name {
-    font-weight: 600;
-    color: var(--text);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink);
 }
 
 .pollutant-bar-track {
-    height: 8px;
-    background: var(--panel-soft);
-    border-radius: 999px;
+    height: 16px;
+    background: var(--paper);
+    border-radius: 0;
     overflow: hidden;
-    border: 1px solid var(--border);
+    border: var(--border-w) solid var(--ink);
 }
 
 .pollutant-bar {
+    display: block;
     height: 100%;
-    border-radius: 999px;
-    transition: width 0.4s ease;
+    border-radius: 0;
+    transition: width 0.4s steps(8, end);
+    min-width: 3px;
 }
 
 .pollutant-value {
     text-align: right;
-    color: var(--text-muted);
+    color: var(--muted);
+    font-size: 0.72rem;
     font-variant-numeric: tabular-nums;
 }
 
 /* ---------- Footer ---------- */
 
 .footer {
-    background: var(--panel);
-    border-top: 1px solid var(--border);
-    padding: 0.8rem 1.25rem;
+    background: var(--paper);
+    border-top: 3px solid var(--ink);
+    padding: 0.85rem 1.25rem;
     text-align: center;
-    font-size: 0.75rem;
-    color: var(--text-muted);
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    color: var(--muted);
 }
 
 .footer a {
-    color: var(--accent);
-    text-decoration: none;
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
 }
 
-.footer a:hover { text-decoration: underline; }
+.footer a:hover { text-decoration-thickness: 2px; }
 
 /* ---------- Leaflet popup theming ---------- */
 
 .leaflet-popup-content-wrapper {
-    background: var(--panel);
-    color: var(--text);
-    border-radius: 10px;
+    background: var(--card);
+    color: var(--ink);
+    border-radius: 0;
+    border: var(--border-w) solid var(--ink);
+    box-shadow: var(--shadow-sm) !important;
+    font-family: var(--mono);
 }
 
-.leaflet-popup-tip { background: var(--panel); }
+.leaflet-popup-tip { background: var(--card); }
 
 .popup-city {
-    font-weight: 700;
+    font-weight: 800;
+    text-transform: uppercase;
     margin-bottom: 0.3rem;
 }
 
 .popup-aqi {
-    font-size: 0.85rem;
-    color: var(--text-muted);
+    font-size: 0.8rem;
+    color: var(--muted);
 }
+
+.leaflet-container a { color: var(--ink); }

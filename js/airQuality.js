@@ -9,8 +9,10 @@ import { computeAqi } from "./aqi.js";
  * Fetch current air quality for a coordinate.
  * Returns a normalized object:
  * {
- *   aqi, dominant, pollutants: { pm2_5, pm10, o3, no2, so2, co },
- *   usAqi (API-provided, may be null)
+ *   pollutants: { pm2_5, pm10, o3, no2, so2, co },
+ *   standards: { us: { aqi, dominant }|null, cpcb: { aqi, dominant }|null },
+ *   aqi, dominant,        // US-EPA values (legacy convenience fields)
+ *   usAqi                 // API-provided US AQI, may be null
  * }
  * @param {number} lat
  * @param {number} lon
@@ -36,12 +38,15 @@ export async function fetchAirQuality(lat, lon) {
         throw new Error("No pollutant data available for this location");
     }
 
-    const computed = computeAqi(pollutants);
+    // Overall AQI on both supported scales from the same concentrations.
+    const us = computeAqi(pollutants, "us");
+    const cpcb = computeAqi(pollutants, "cpcb");
 
     return {
         pollutants,
-        aqi: computed ? computed.aqi : (cur.us_aqi ?? null),
-        dominant: computed ? computed.dominant : null,
+        standards: { us, cpcb },
+        aqi: us ? us.aqi : (cur.us_aqi ?? null),
+        dominant: us ? us.dominant : null,
         usAqi: cur.us_aqi ?? null,
         fetchedAt: new Date()
     };

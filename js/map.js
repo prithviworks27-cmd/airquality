@@ -2,8 +2,8 @@
 // map.js — Leaflet map + color-coded city markers
 // ============================================================
 
-import { DEFAULT_CITIES, TILE_LAYERS } from "./config.js";
-import { getAqiCategory } from "./aqi.js";
+import { DEFAULT_CITIES, TILE_LAYERS, AQI_STANDARDS } from "./config.js";
+import { getAqiCategory, standardForCity } from "./aqi.js";
 
 let map = null;
 const markers = new Map(); // cityKey -> leaflet marker
@@ -50,19 +50,27 @@ export function initMap(selectCallback) {
 export function setCityMarker(city, aqiData) {
     const key = `${city.name}|${city.lat.toFixed(3)},${city.lon.toFixed(3)}`;
 
-    const cat = aqiData ? getAqiCategory(aqiData.aqi) : null;
+    // Rate each city on the standard appropriate to its country
+    // (CPCB/NAQI for India, US EPA elsewhere).
+    const standard = standardForCity(city);
+    const scaled = aqiData && aqiData.standards && aqiData.standards[standard]
+        ? aqiData.standards[standard]
+        : null;
+    const aqiVal = scaled ? scaled.aqi : null;
+
+    const cat = aqiVal !== null ? getAqiCategory(aqiVal, standard) : null;
     const color = cat ? cat.color : "#94a3b8";
 
     const marker = L.circleMarker([city.lat, city.lon], {
-        radius: Math.max(9, Math.min(22, (aqiData ? aqiData.aqi : 25) / 12)),
-        color: "#0f172a",
+        radius: Math.max(9, Math.min(22, (aqiVal !== null ? aqiVal : 25) / 12)),
+        color: "#111111",
         weight: 2,
         fillColor: color,
         fillOpacity: 0.85
     }).addTo(map);
 
     marker.bindTooltip(
-        `<strong>${city.name}</strong><br>AQI: ${aqiData ? aqiData.aqi : "…"}`,
+        `<strong>${city.name}</strong><br>AQI: ${aqiVal !== null ? aqiVal : "…"} (${AQI_STANDARDS[standard].short})`,
         { direction: "top", offset: [0, -8] }
     );
 

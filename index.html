@@ -34,13 +34,8 @@
         <!-- Map -->
         <section class="map-section" aria-label="Air quality map">
             <div id="map" class="map"></div>
-            <div class="map-legend" aria-label="AQI legend">
-                <span class="legend-item"><span class="legend-swatch" style="background:#00c853"></span>Good</span>
-                <span class="legend-item"><span class="legend-swatch" style="background:#ffd600"></span>Moderate</span>
-                <span class="legend-item"><span class="legend-swatch" style="background:#ff8f00"></span>Unhealthy (sensitive)</span>
-                <span class="legend-item"><span class="legend-swatch" style="background:#e53935"></span>Unhealthy</span>
-                <span class="legend-item"><span class="legend-swatch" style="background:#8e24aa"></span>Very Unhealthy</span>
-                <span class="legend-item"><span class="legend-swatch" style="background:#7e0023"></span>Hazardous</span>
+            <div class="map-legend" id="mapLegend" aria-label="AQI legend">
+                <!-- Populated by app.js with the active AQI standard's categories -->
             </div>
         </section>
 
@@ -64,7 +59,7 @@
                 <div class="aqi-hero">
                     <div class="aqi-ring" id="aqiRing">
                         <span class="aqi-value" id="aqiValue">—</span>
-                        <span class="aqi-label">AQI</span>
+                        <span class="aqi-label" id="aqiStandard">AQI</span>
                     </div>
                     <div class="aqi-summary">
                         <span id="aqiCategory" class="category-badge">—</span>

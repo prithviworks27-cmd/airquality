@@ -2,15 +2,23 @@
 // aqi.js — AQI computation and category helpers
 // ============================================================
 
-import { AQI_CATEGORIES } from "./config.js";
+import { AQI_STANDARDS } from "./config.js";
+
+// Which AQI scale to use for a location. India officially uses the CPCB
+// National Air Quality Index (NAQI); everywhere else falls back to US EPA.
+export function standardForCity(city) {
+    return city && (city.country || "").trim() === "India" ? "cpcb" : "us";
+}
 
 /**
- * Return the category object for a given AQI value.
+ * Return the category object for a given AQI value on a given scale.
  * @param {number} aqi
+ * @param {"us"|"cpcb"} standard
  */
-export function getAqiCategory(aqi) {
+export function getAqiCategory(aqi, standard = "us") {
     if (typeof aqi !== "number" || Number.isNaN(aqi)) return null;
-    return AQI_CATEGORIES.find(c => aqi >= c.range[0] && aqi < c.range[1]) || null;
+    const categories = (AQI_STANDARDS[standard] || AQI_STANDARDS.us).categories;
+    return categories.find(c => aqi >= c.range[0] && aqi < c.range[1]) || null;
 }
 
 /**
@@ -72,13 +80,72 @@ const EPA_BREAKPOINTS = {
 };
 
 /**
- * Convert one pollutant concentration to a sub-AQI index.
+ * India CPCB NAQI sub-index breakpoints (µg/m³ for all pollutants, CO in µg/m³
+ * = mg/m³ × 1000). Segment boundaries are the official CPCB tables; the
+ * sub-index in a segment is interpolated linearly.
+ */
+const CPCB_BREAKPOINTS = {
+    pm2_5: [
+        [0, 30, 0, 50],
+        [30, 60, 51, 100],
+        [60, 90, 101, 200],
+        [90, 120, 201, 300],
+        [120, 250, 301, 400],
+        [250, 500, 401, 500]
+    ],
+    pm10: [
+        [0, 50, 0, 50],
+        [50, 100, 51, 100],
+        [100, 250, 101, 200],
+        [250, 350, 201, 300],
+        [350, 430, 301, 400],
+        [430, 1000, 401, 500]
+    ],
+    o3: [
+        [0, 50, 0, 50],
+        [50, 100, 51, 100],
+        [100, 168, 101, 200],
+        [168, 208, 201, 300],
+        [208, 748, 301, 400],
+        [748, 1496, 401, 500]
+    ],
+    no2: [
+        [0, 40, 0, 50],
+        [40, 80, 51, 100],
+        [80, 180, 101, 200],
+        [180, 280, 201, 300],
+        [280, 400, 301, 400],
+        [400, 802, 401, 500]
+    ],
+    so2: [
+        [0, 40, 0, 50],
+        [40, 80, 51, 100],
+        [80, 380, 101, 200],
+        [380, 800, 201, 300],
+        [800, 1600, 301, 400],
+        [1600, 2400, 401, 500]
+    ],
+    co: [
+        [0, 1000, 0, 50],
+        [1000, 2000, 51, 100],
+        [2000, 10000, 101, 200],
+        [10000, 17000, 201, 300],
+        [17000, 34000, 301, 400],
+        [34000, 68000, 401, 500]
+    ]
+};
+
+const BREAKPOINT_TABLES = { us: EPA_BREAKPOINTS, cpcb: CPCB_BREAKPOINTS };
+
+/**
+ * Convert one pollutant concentration to a sub-AQI index on a given scale.
  * @param {string} pollutantKey
  * @param {number} conc  concentration in µg/m³ (CO in µg/m³)
+ * @param {"us"|"cpcb"} standard
  * @returns {number|null} sub-index or null if not computable
  */
-export function pollutantSubIndex(pollutantKey, conc) {
-    const table = EPA_BREAKPOINTS[pollutantKey];
+export function pollutantSubIndex(pollutantKey, conc, standard = "us") {
+    const table = (BREAKPOINT_TABLES[standard] || EPA_BREAKPOINTS)[pollutantKey];
     if (!table || typeof conc !== "number" || Number.isNaN(conc) || conc < 0) return null;
 
     for (const [cLow, cHigh, iLow, iHigh] of table) {
@@ -93,14 +160,15 @@ export function pollutantSubIndex(pollutantKey, conc) {
 }
 
 /**
- * Compute overall AQI from a set of current pollutant values.
+ * Compute overall AQI from a set of current pollutant values on a given scale.
  * @param {Object<string, number>} pollutants e.g. { pm2_5: 23.4, ... }
+ * @param {"us"|"cpcb"} standard
  * @returns {{ aqi: number, dominant: string } | null}
  */
-export function computeAqi(pollutants) {
+export function computeAqi(pollutants, standard = "us") {
     let best = null;
     for (const [key, conc] of Object.entries(pollutants)) {
-        const sub = pollutantSubIndex(key, conc);
+        const sub = pollutantSubIndex(key, conc, standard);
         if (sub !== null && (best === null || sub > best.aqi)) {
             best = { aqi: sub, dominant: key };
         }

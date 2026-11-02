@@ -77,6 +77,73 @@ export const AQI_CATEGORIES = [
     }
 ];
 
+// AQI standards we support.
+// "us"   — US EPA AQI (Open-Meteo's native us_aqi, used worldwide).
+// "cpcb" — India CPCB NAQI scale: for the same concentrations it rates
+//          Indian smog much higher (e.g. PM2.5 118 µg/m³ → CPCB ~292 "Poor"
+//          vs US AQI 187 "Unhealthy"), matching Indian weather apps.
+export const AQI_STANDARDS = {
+    us: {
+        key: "us",
+        label: "US EPA AQI",
+        short: "US EPA",
+        categories: AQI_CATEGORIES,
+        // Health-alert banner kicks in at Unhealthy (151+).
+        alertMin: 151
+    },
+    cpcb: {
+        key: "cpcb",
+        label: "India CPCB (NAQI)",
+        short: "CPCB India",
+        categories: [
+            {
+                key: "good",
+                label: "Good",
+                range: [0, 51],
+                color: "#00a651",
+                advice: "Minimal impact on health."
+            },
+            {
+                key: "satisfactory",
+                label: "Satisfactory",
+                range: [51, 101],
+                color: "#84cc16",
+                advice: "Typical Indian air on a clean day. Minor breathing discomfort possible for sensitive people."
+            },
+            {
+                key: "moderate",
+                label: "Moderate",
+                range: [101, 201],
+                color: "#ffd600",
+                advice: "Breathing discomfort for people with lung or heart disease, children and older adults."
+            },
+            {
+                key: "poor",
+                label: "Poor",
+                range: [201, 301],
+                color: "#f97316",
+                advice: "Breathing discomfort for most people on prolonged exposure. Limit outdoor activity."
+            },
+            {
+                key: "very-poor",
+                label: "Very Poor",
+                range: [301, 401],
+                color: "#e53935",
+                advice: "Respiratory illness on prolonged exposure. Avoid outdoor activity."
+            },
+            {
+                key: "severe",
+                label: "Severe",
+                range: [401, Infinity],
+                color: "#7e0023",
+                advice: "Serious health impact even for healthy people. Stay indoors and filter air if possible."
+            }
+        ],
+        // Health-alert banner kicks in at Poor (201+) — comparable concern level.
+        alertMin: 201
+    }
+};
+
 // Pollutants we display, with their display names and max µg/m³
 // used for scaling the breakdown bars.
 export const POLLUTANTS = [
