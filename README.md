@@ -7,12 +7,12 @@ clone and open in a browser.
 ## Features
 
 - **Interactive map** (Leaflet + OpenStreetMap) with color-coded AQI markers for 8 default cities worldwide
-- **City search** — look up any city via the Open-Meteo geocoding API
-- **AQI details panel** — overall AQI, category badge, dominant pollutant, and a color ring scaled by severity
+- **City search** — Look up any city via the Open-Meteo geocoding API
+- **AQI details panel** — Overall AQI, category badge, dominant pollutant, and a color ring scaled by severity
 - **Pollutant breakdown** — PM2.5, PM10, O₃, NO₂, SO₂, CO with concentration bars
-- **Health alerts** — banner with official-style advice when AQI reaches Unhealthy or worse
+- **Health alerts** — Banner with official-style advice when AQI reaches Unhealthy or worse
 - **Auto-refresh** every 10 minutes
-- **Responsive** — map + panel side by side on desktop, stacked on mobile
+- **Responsive** — Map + panel side by side on desktop, stacked on mobile
 
 ## How AQI is computed
 
