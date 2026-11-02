@@ -1,13 +1,8 @@
-<<<<<<< HEAD
-# air-quality-dash
-=======
 # AirWatch — Air Quality Monitoring Dashboard
 
-A real-time air quality dashboard with an interactive world map, per-city pollutant
-breakdown, and health alerts. Zero backend, zero API keys, zero build step —
+A real-time air quality dashboard with an interactive world map, per-city pollutant breakdown, and health alerts. Zero backend, zero API keys, zero build step —
 clone and open in a browser.
 
-![Dashboard preview](docs/screenshot.png)
 
 ## Features
 
